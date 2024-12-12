@@ -82,7 +82,10 @@ contents.each do |row|
   registration = row[:regdate]
 
   hour = parse_regdate(registration)
-  registration_hours << hour # Collect registration hours
+
+  if hour # Only add if hour is valid (not nil)
+    registration_hours << hour # Collect registration hours
+  end
 
   legislators = legislators_by_zipcode(zipcode)
 
