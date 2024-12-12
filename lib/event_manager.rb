@@ -33,7 +33,7 @@ end
 def peak_registration_hours(registration_hours)
   hour_counts = registration_hours.tally # Tally occurrences of each hour
   peak_hours = hour_counts.sort_by { |hour, count| -count }.take(3) # Sort by count and take top 3
-  peak_hours.map(&:first) # Return only the hours
+  peak_hours # Return array of [hour, count]
 end
 
 def legislators_by_zipcode(zip)
@@ -95,5 +95,10 @@ contents.each do |row|
   puts "#{name} #{zipcode} #{phone} #{registration}" # Assignment check
 end
 
-peak_hours = peak_registration_hours(registration_hours)
-puts "Peak registration hours: #{peak_hours.join(', ')}"
+# Calculate and display peak registration hours after processing all attendees
+peak_hours_with_counts = peak_registration_hours(registration_hours)
+
+puts "Peak registration hours and user counts:"
+peak_hours_with_counts.each do |hour, count|
+  puts "Hour: #{hour}, Count: #{count}"
+end
