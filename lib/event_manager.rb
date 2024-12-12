@@ -2,9 +2,10 @@ require 'csv'
 require 'google/apis/civicinfo_v2'
 require 'erb'
 require 'time'
+require 'date'
 
 def clean_zipcode(zipcode)
-  zipcode.to_s.rjust(5,"0")[0..4]
+  zipcode.to_s.rjust(5, "0")[0..4]
 end
 
 def clean_phone_number(phone_number)
@@ -22,8 +23,7 @@ end
 
 def parse_regdate(regdate)
   begin
-    # Parse using strptime with the specified format
-    Time.strptime(regdate, "%m/%d/%y %H:%M").hour
+    Time.strptime(regdate, "%m/%d/%y %H:%M") # Return full Time object
   rescue ArgumentError => e
     puts "Error parsing registration date '#{regdate}': #{e.message}"
     nil # Return nil or handle as appropriate
@@ -34,6 +34,12 @@ def peak_registration_hours(registration_hours)
   hour_counts = registration_hours.tally # Tally occurrences of each hour
   peak_hours = hour_counts.sort_by { |hour, count| -count }.take(3) # Sort by count and take top 3
   peak_hours # Return array of [hour, count]
+end
+
+def day_of_week_targeting(registration_dates)
+  day_names = registration_dates.map { |date| date.strftime("%A") } # Get day names from dates
+  day_counts = day_names.tally # Use tally to count occurrences of each day
+  day_counts.sort_by { |day, count| -count }.take(3) # Sort by count and take top 3 days
 end
 
 def legislators_by_zipcode(zip)
@@ -51,7 +57,7 @@ def legislators_by_zipcode(zip)
   end
 end
 
-def save_thank_you_letter(id,form_letter)
+def save_thank_you_letter(id, form_letter)
   Dir.mkdir('output') unless Dir.exist?('output')
 
   filename = "output/thanks_#{id}.html"
@@ -72,7 +78,7 @@ contents = CSV.open(
 template_letter = File.read('form_letter.erb')
 erb_template = ERB.new template_letter
 
-registration_hours = Array.new
+registration_dates = [] # Changed to store full date objects
 
 contents.each do |row|
   id = row[0]
@@ -81,24 +87,34 @@ contents.each do |row|
   phone = clean_phone_number(row[:homephone]) # Clean phone numbers
   registration = row[:regdate]
 
-  hour = parse_regdate(registration)
+  date = parse_regdate(registration)
 
-  if hour # Only add if hour is valid (not nil)
-    registration_hours << hour # Collect registration hours
+  if date # Only add if date is valid (not nil)
+    registration_dates << date # Collect registration dates as full DateTime objects
   end
 
   legislators = legislators_by_zipcode(zipcode)
 
   form_letter = erb_template.result(binding)
-  save_thank_you_letter(id,form_letter)
+  save_thank_you_letter(id, form_letter)
 
   puts "#{name} #{zipcode} #{phone} #{registration}" # Assignment check
 end
 
 # Calculate and display peak registration hours after processing all attendees
-peak_hours_with_counts = peak_registration_hours(registration_hours)
+peak_hours_with_counts = peak_registration_hours(registration_dates.map(&:hour))
 
-puts "Peak registration hours and user counts:"
+puts "----------------------------------------"
+puts "Peak registration hours and users count:"
 peak_hours_with_counts.each do |hour, count|
   puts "Hour: #{hour}, Count: #{count}"
+end
+
+# Calculate and display peak registration days after processing all attendees
+peak_days_with_counts = day_of_week_targeting(registration_dates)
+
+puts "----------------------------------------"
+puts "Peak registration days and users count:"
+peak_days_with_counts.each do |day, count|
+  puts "Day: #{day}, Count: #{count}"
 end
