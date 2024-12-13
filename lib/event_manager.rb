@@ -1,5 +1,6 @@
 require 'csv'
 require 'google/apis/civicinfo_v2'
+require 'dotenv/load'
 require 'erb'
 require 'time'
 require 'date'
@@ -44,7 +45,7 @@ end
 
 def legislators_by_zipcode(zip)
   civic_info = Google::Apis::CivicinfoV2::CivicInfoService.new
-  civic_info.key = File.read('secret.key').strip
+  civic_info.key = ENV['CIVIC_INFO_KEY']
 
   begin
     civic_info.representative_info_by_address(
