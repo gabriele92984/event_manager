@@ -1,2 +1,5 @@
 # Ignore secret keys
-.secret.key
+
+# Ignore environment variables
+.env
+
